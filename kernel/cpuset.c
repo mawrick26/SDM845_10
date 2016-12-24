@@ -56,7 +56,7 @@
 #include <linux/sort.h>
 #include <linux/binfmts.h>
 
-#include <asm/uaccess.h>
+#include <linux/uaccess.h>
 #include <linux/atomic.h>
 #include <linux/mutex.h>
 #include <linux/cgroup.h>
