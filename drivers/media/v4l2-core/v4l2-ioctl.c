@@ -12,6 +12,7 @@
  *              Mauro Carvalho Chehab <mchehab@infradead.org> (version 2)
  */
 
+#include <linux/mm.h>
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/types.h>
@@ -2935,7 +2936,7 @@ video_usercopy(struct file *file, unsigned int cmd, unsigned long arg,
 			parg = sbuf;
 		} else {
 			/* too big to allocate from stack */
-			mbuf = kmalloc(_IOC_SIZE(cmd), GFP_KERNEL);
+			mbuf = kvmalloc(_IOC_SIZE(cmd), GFP_KERNEL);
 			if (NULL == mbuf)
 				return -ENOMEM;
 			parg = mbuf;
@@ -2985,7 +2986,7 @@ video_usercopy(struct file *file, unsigned int cmd, unsigned long arg,
 		if (array_size <= ARRAY_SIZE(mbuf_onstack)) {
 			mbuf = mbuf_onstack;
 		} else {
-			mbuf = kmalloc(array_size, GFP_KERNEL);
+			mbuf = kvmalloc(array_size, GFP_KERNEL);
 			err = -ENOMEM;
 			if (NULL == mbuf)
 				goto out_array_args;
@@ -3033,7 +3034,7 @@ out_array_args:
 
 out:
 	if (mbuf != mbuf_onstack)
-		kfree(mbuf);
+		kvfree(mbuf);
 	return err;
 }
 EXPORT_SYMBOL(video_usercopy);
