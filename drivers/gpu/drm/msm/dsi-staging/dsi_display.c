@@ -6597,7 +6597,8 @@ int dsi_display_prepare(struct dsi_display *display)
 	if (mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) {
 		if (display->is_cont_splash_enabled) {
 			pr_err("DMS is not supposed to be set on first frame\n");
-			return -EINVAL;
+			rc = -EINVAL;
+			goto error;
 		}
 		/* update dsi ctrl for new mode */
 		rc = dsi_display_pre_switch(display);
@@ -7027,6 +7028,12 @@ int dsi_display_enable(struct dsi_display *display)
 		rc = -EINVAL;
 		goto error_disable_panel;
 	}
+
+	rc = dsi_display_set_backlight(display,
+				       display->panel->bl_config.bl_level);
+	if (rc)
+		pr_warn("[%s]failed to restore previous brightness, rc=%d\n",
+			display->name, rc);
 
 	goto error;
 
