@@ -418,6 +418,18 @@ bool zpool_evictable(struct zpool *zpool)
 	return zpool->evictable;
 }
 
+/**
+ * zpool_huge_class_size() - get size for the "huge" class
+ * @pool	The zpool to check
+ *
+ * Returns: size of the huge class
+ */
+size_t zpool_huge_class_size(struct zpool *zpool)
+{
+	return zpool->driver->huge_class_size ?
+		zpool->driver->huge_class_size(zpool->pool) : 0;
+}
+
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Dan Streetman <ddstreet@ieee.org>");
 MODULE_DESCRIPTION("Common API for compressed memory storage");
