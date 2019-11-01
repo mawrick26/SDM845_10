@@ -18,8 +18,6 @@
 #include "sde_hw_util.h"
 #include "sde_hw_blk.h"
 
-#define SDE_HW_ROT_NAME_SIZE	80
-
 struct sde_hw_rot;
 
 /**
@@ -144,7 +142,6 @@ struct sde_hw_rot_ops {
 struct sde_hw_rot {
 	struct sde_hw_blk base;
 	struct sde_hw_blk_reg_map hw;
-	char name[SDE_HW_ROT_NAME_SIZE];
 	int idx;
 	const struct sde_rot_cfg *caps;
 	struct sde_mdss_cfg *catalog;
