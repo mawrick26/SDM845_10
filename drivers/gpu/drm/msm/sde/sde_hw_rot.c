@@ -62,16 +62,6 @@ static struct sde_rot_cfg *_rot_offset(enum sde_rot rot,
 }
 
 /**
- * _sde_hw_rot_reg_dump - perform register dump
- * @ptr: private pointer to rotator platform device
- * return: None
- */
-static void _sde_hw_rot_reg_dump(void *ptr)
-{
-	sde_rotator_inline_reg_dump((struct platform_device *) ptr);
-}
-
-/**
  * sde_hw_rot_start - start rotator before any commit
  * @hw: Pointer to rotator hardware driver
  * return: 0 if success; error code otherwise
@@ -105,7 +95,7 @@ static int sde_hw_rot_start(struct sde_hw_rot *hw)
  */
 static void sde_hw_rot_stop(struct sde_hw_rot *hw)
 {
-	if (!hw || !hw->caps || !hw->caps->pdev) {
+	if (!hw) {
 		SDE_ERROR("invalid parameter\n");
 		return;
 	}
@@ -617,7 +607,6 @@ static int sde_hw_rot_commit(struct sde_hw_rot *hw, struct sde_hw_rot_cmd *data,
 		return -EINVAL;
 	}
 
-	rot_cmd.sequence_id = data->sequence_id;
 	rot_cmd.video_mode = data->video_mode;
 	rot_cmd.fps = data->fps;
 
@@ -942,7 +931,6 @@ struct sde_hw_rot *sde_hw_rot_init(enum sde_rot idx,
 	c->caps = cfg;
 	c->catalog = m;
 	_setup_rot_ops(&c->ops, c->caps->features);
-	snprintf(c->name, ARRAY_SIZE(c->name), "sde_rot_%d", idx - ROT_0);
 
 	rc = sde_hw_blk_init(&c->base, SDE_HW_BLK_ROT, idx, &sde_hw_rot_ops);
 	if (rc) {
