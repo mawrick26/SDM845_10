@@ -6141,6 +6141,7 @@ int qce_close(void *handle)
 	kfree(pce_dev->iovec_vmem);
 	arm_iommu_detach_device(pce_dev->pdev);
 
+	arm_iommu_detach_device(pce_dev->pdev);
 	if (pce_dev->enable_s1_smmu)
 		qce_iommu_release_iomapping(pce_dev);
 
