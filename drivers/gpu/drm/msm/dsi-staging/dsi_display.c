@@ -36,23 +36,7 @@
 #include <linux/msm_drm_notify.h>
 #include <linux/notifier.h>
 #include <linux/sched.h>
-#include <linux/pm_qos.h>
-#include <linux/cpufreq.h>
-#include <linux/pm_wakeup.h>
 
-#define BIG_CPU_NUMBER 4
-#if defined(CONFIG_ARCH_SDM845)
-#define LCDSPEEDUP_BIG_CPU_QOS_FREQ    2649600
-#elif defined(CONFIG_ARCH_MSM8998)
-#define LCDSPEEDUP_BIG_CPU_QOS_FREQ    2361600
-#elif defined(CONFIG_ARCH_MSM8996)
-#define LCDSPEEDUP_BIG_CPU_QOS_FREQ    2073600
-#endif
-#define LCD_QOS_TIMEOUT 1000000
-#define NO_BOOST        0
-
-static struct pm_qos_request lcdspeedup_little_cpu_qos;
-static struct pm_qos_request lcdspeedup_big_cpu_qos;
 
 #define to_dsi_bridge(x)  container_of((x), struct dsi_bridge, base)
 
@@ -231,7 +215,7 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 
 
 	if (strcmp(dsi_display->panel->name, "samsung s6e3fc2x01 cmd mode dsi panel") == 0){
-	
+
 			if (bl_lvl != 0 && panel->bl_config.bl_level == 0) {
 				if (panel->naive_display_p3_mode) {
 					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_P3_ON cmds\n");
@@ -245,7 +229,7 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON);
 				}
-	
+
 				if (panel->naive_display_customer_srgb_mode) {
 					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_ON);
@@ -254,7 +238,7 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_OFF cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_OFF);
 				}
-	
+
 				if (panel->naive_display_customer_p3_mode) {
 						pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_ON cmds\n");
 						rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_ON);
@@ -263,12 +247,12 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 						pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_OFF cmds\n");
 						rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_OFF);
 				}
-	
+
 			}
-	
+
 	}
 	if (strcmp(dsi_display->panel->name, "samsung sofef00_m cmd mode dsi panel") == 0){
-	
+
 			if (bl_lvl != 0 && panel->bl_config.bl_level == 0) {
 				if (panel->naive_display_p3_mode) {
 					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_P3_ON cmds\n");
@@ -282,7 +266,7 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 					pr_err("Send DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_SET_NATIVE_DISPLAY_SRGB_COLOR_ON);
 				}
-	
+
 				if (panel->naive_display_customer_srgb_mode) {
 					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_ON cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_ON);
@@ -291,7 +275,7 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 					pr_err("Send DSI_CMD_LOADING_CUSTOMER_RGB_OFF cmds\n");
 					rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_RGB_OFF);
 				}
-	
+
 				if (panel->naive_display_customer_p3_mode) {
 						pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_ON cmds\n");
 						rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_ON);
@@ -300,9 +284,9 @@ int dsi_display_set_backlight(void *display, u32 bl_lvl)
 						pr_err("Send DSI_CMD_LOADING_CUSTOMER_P3_OFF cmds\n");
 						rc = dsi_panel_tx_cmd_set(panel, DSI_CMD_LOADING_CUSTOMER_P3_OFF);
 				}
-	
+
 			}
-	
+
 	}
 
 	panel->bl_config.bl_level = bl_lvl;
@@ -760,7 +744,7 @@ static int dsi_display_read_status(struct dsi_display_ctrl *ctrl,
 		cmds[i].msg.rx_buf = config->status_buf;
 		cmds[i].msg.rx_len = config->status_cmds_rlen[i];
 		rc = dsi_ctrl_cmd_transfer(ctrl->ctrl, &cmds[i].msg, flags);
-		
+
 		retry_times = 0;
 		do {
 		    rc = dsi_ctrl_cmd_transfer(ctrl->ctrl, &cmds[i].msg, flags);
@@ -6594,8 +6578,7 @@ int dsi_display_prepare(struct dsi_display *display)
 	if (mode->dsi_mode_flags & DSI_MODE_FLAG_DMS) {
 		if (display->is_cont_splash_enabled) {
 			pr_err("DMS is not supposed to be set on first frame\n");
-			rc = -EINVAL;
-			goto error;
+			return -EINVAL;
 		}
 		/* update dsi ctrl for new mode */
 		rc = dsi_display_pre_switch(display);
@@ -7413,26 +7396,26 @@ int dsi_display_set_native_display_p3_mode(struct drm_connector *connector, int 
 		struct dsi_panel *panel = NULL;
 		struct dsi_bridge *c_bridge;
 		int rc = 0;
-	
+
 		if ((connector == NULL) || (connector->encoder == NULL)
 				|| (connector->encoder->bridge == NULL))
 			return 0;
-	
+
 		c_bridge =	to_dsi_bridge(connector->encoder->bridge);
 		dsi_display = c_bridge->display;
-	
+
 		if ((dsi_display == NULL) || (dsi_display->panel == NULL))
 			return -EINVAL;
-	
+
 		panel = dsi_display->panel;
-	
+
 		mutex_lock(&dsi_display->display_lock);
-	
+
 		panel->naive_display_p3_mode = level;
 		if (!dsi_panel_initialized(panel)) {
 			goto error;
 		}
-	
+
 		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
 				DSI_CORE_CLK, DSI_CLK_ON);
 		if (rc) {
@@ -7440,11 +7423,11 @@ int dsi_display_set_native_display_p3_mode(struct drm_connector *connector, int 
 				   dsi_display->name, rc);
 			goto error;
 		}
-	
+
 		rc = dsi_panel_set_native_display_p3_mode(panel, level);
 		if (rc)
 			pr_err("unable to set native display p3 mode\n");
-	
+
 		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
 				DSI_CORE_CLK, DSI_CLK_OFF);
 		if (rc) {
@@ -7463,26 +7446,26 @@ int dsi_display_set_customer_srgb_mode(struct drm_connector *connector, int leve
 		struct dsi_panel *panel = NULL;
 		struct dsi_bridge *c_bridge;
 		int rc = 0;
-	
+
 		if ((connector == NULL) || (connector->encoder == NULL)
 				|| (connector->encoder->bridge == NULL))
 			return 0;
-	
+
 		c_bridge =	to_dsi_bridge(connector->encoder->bridge);
 		dsi_display = c_bridge->display;
-	
+
 		if ((dsi_display == NULL) || (dsi_display->panel == NULL))
 			return -EINVAL;
-	
+
 		panel = dsi_display->panel;
-	
+
 		mutex_lock(&dsi_display->display_lock);
-	
+
 		panel->naive_display_customer_srgb_mode = level;
 		if (!dsi_panel_initialized(panel)) {
 			goto error;
 		}
-	
+
 		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
 				DSI_CORE_CLK, DSI_CLK_ON);
 		if (rc) {
@@ -7490,11 +7473,11 @@ int dsi_display_set_customer_srgb_mode(struct drm_connector *connector, int leve
 				   dsi_display->name, rc);
 			goto error;
 		}
-	
+
 		rc = dsi_panel_set_customer_srgb_mode(panel, level);
 		if (rc)
 			pr_err("unable to set customer srgb mode\n");
-	
+
 		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
 				DSI_CORE_CLK, DSI_CLK_OFF);
 		if (rc) {
@@ -7506,33 +7489,33 @@ int dsi_display_set_customer_srgb_mode(struct drm_connector *connector, int leve
 		mutex_unlock(&dsi_display->display_lock);
 		return rc;
 }
-	
+
 int dsi_display_set_customer_p3_mode(struct drm_connector *connector, int level)
 	{
 		struct dsi_display *dsi_display = NULL;
 		struct dsi_panel *panel = NULL;
 		struct dsi_bridge *c_bridge;
 		int rc = 0;
-	
+
 		if ((connector == NULL) || (connector->encoder == NULL)
 				|| (connector->encoder->bridge == NULL))
 			return 0;
-	
+
 		c_bridge =	to_dsi_bridge(connector->encoder->bridge);
 		dsi_display = c_bridge->display;
-	
+
 		if ((dsi_display == NULL) || (dsi_display->panel == NULL))
 			return -EINVAL;
-	
+
 		panel = dsi_display->panel;
-	
+
 		mutex_lock(&dsi_display->display_lock);
-	
+
 		panel->naive_display_customer_p3_mode = level;
 		if (!dsi_panel_initialized(panel)) {
 			goto error;
 		}
-	
+
 		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
 				DSI_CORE_CLK, DSI_CLK_ON);
 		if (rc) {
@@ -7540,11 +7523,11 @@ int dsi_display_set_customer_p3_mode(struct drm_connector *connector, int level)
 				   dsi_display->name, rc);
 			goto error;
 		}
-	
+
 		rc = dsi_panel_set_customer_p3_mode(panel, level);
 		if (rc)
 			pr_err("unable to set customer srgb mode\n");
-	
+
 		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
 				DSI_CORE_CLK, DSI_CLK_OFF);
 		if (rc) {
@@ -7562,26 +7545,26 @@ int dsi_display_set_native_display_srgb_color_mode(struct drm_connector *connect
 		struct dsi_panel *panel = NULL;
 		struct dsi_bridge *c_bridge;
 		int rc = 0;
-	
+
 		if ((connector == NULL) || (connector->encoder == NULL)
 				|| (connector->encoder->bridge == NULL))
 			return 0;
-	
+
 		c_bridge =	to_dsi_bridge(connector->encoder->bridge);
 		dsi_display = c_bridge->display;
-	
+
 		if ((dsi_display == NULL) || (dsi_display->panel == NULL))
 			return -EINVAL;
-	
+
 		panel = dsi_display->panel;
-	
+
 		mutex_lock(&dsi_display->display_lock);
-	
+
 		panel->naive_display_srgb_color_mode = level;
 		if (!dsi_panel_initialized(panel)) {
 			goto error;
 		}
-	
+
 		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
 				DSI_CORE_CLK, DSI_CLK_ON);
 		if (rc) {
@@ -7589,11 +7572,11 @@ int dsi_display_set_native_display_srgb_color_mode(struct drm_connector *connect
 				   dsi_display->name, rc);
 			goto error;
 		}
-	
+
 		rc = dsi_panel_set_native_display_srgb_color_mode(panel, level);
 		if (rc)
 			pr_err("unable to set native display p3 mode\n");
-	
+
 		rc = dsi_display_clk_ctrl(dsi_display->dsi_clk_handle,
 				DSI_CORE_CLK, DSI_CLK_OFF);
 		if (rc) {
@@ -7672,7 +7655,7 @@ int dsi_display_set_native_display_wide_color_mode(struct drm_connector *connect
 error:
 	mutex_unlock(&dsi_display->display_lock);
 	return rc;
-}	
+}
 
 int dsi_display_get_native_display_srgb_color_mode(struct drm_connector *connector)
 {
@@ -7879,6 +7862,7 @@ int dsi_display_read_serial_number(struct dsi_display *dsi_display,
 		flags |= DSI_CTRL_CMD_LAST_COMMAND;
 	}
 	flags |= (DSI_CTRL_CMD_FETCH_MEMORY | DSI_CTRL_CMD_READ);
+
 	if (!m_ctrl->ctrl->vaddr)
 		goto error;
 
@@ -8341,6 +8325,7 @@ int dsi_display_read_panel_id(struct dsi_display *dsi_display,
 		flags |= DSI_CTRL_CMD_LAST_COMMAND;
 	}
 	flags |= (DSI_CTRL_CMD_FETCH_MEMORY | DSI_CTRL_CMD_READ);
+
 	if (!m_ctrl->ctrl->vaddr)
 		goto error;
 
@@ -8547,81 +8532,3 @@ MODULE_PARM_DESC(dsi_display1,
 module_init(dsi_display_register);
 module_exit(dsi_display_unregister);
 
-static int msm_drm_buffer_state_change(struct notifier_block *nb,
-        unsigned long val, void *data)
-{
-        int blank;
-        struct msm_drm_notifier *evdata = data;
-
-        if (!evdata || (evdata->id != 0))
-                return 0;
-
-        blank = *(int *)evdata->data;
-
-        switch (blank) {
-        case MSM_DRM_BLANK_POWERDOWN:
-                if (val == MSM_DRM_EARLY_EVENT_BLANK) {
-                        pm_qos_update_request(&lcdspeedup_little_cpu_qos,
-                                MIN_CPUFREQ);
-                        pm_qos_update_request(&lcdspeedup_big_cpu_qos,
-                                MIN_CPUFREQ);
-                        /* add print actvie ws */
-                        pm_print_active_wakeup_sources_queue(true);
-                        pr_debug("::: LCD start off :::\n");
-                }
-                break;
-        case MSM_DRM_BLANK_UNBLANK:
-                if (val == MSM_DRM_EARLY_EVENT_BLANK) {
-                        struct cpufreq_policy *policy;
-                         /* Speed up LCD on */
-                        /* Fetch little cpu policy
-                        * and drive the CPU towards target frequency
-                        */
-                        pm_qos_update_request_timeout(
-                                &lcdspeedup_little_cpu_qos, MAX_CPUFREQ,
-                                LCD_QOS_TIMEOUT);
-
-                        /* Fetch big cpu policy
-                        * and drive big cpu towards target frequency
-                        */
-                        policy = cpufreq_cpu_get(BIG_CPU_NUMBER);
-                        if (policy)  {
-                                cpufreq_driver_target(policy,
-                                        LCDSPEEDUP_BIG_CPU_QOS_FREQ,
-                                        CPUFREQ_RELATION_H);
-                                pm_qos_update_request_timeout(
-                                        &lcdspeedup_big_cpu_qos,
-                                        (MAX_CPUFREQ-4), LCD_QOS_TIMEOUT);
-                        } else
-                                return NOTIFY_OK;
-                        cpufreq_cpu_put(policy);
-                }
-
-                if (val == MSM_DRM_EVENT_BLANK) {
-                        /* remove print actvie ws */
-                        pm_print_active_wakeup_sources_queue(false);
-                        pr_debug("::: LCD is on :::\n");
-                }
-                break;
-        default:
-                break;
-        }
-        return NOTIFY_OK;
-}
-
-static struct notifier_block msm_drm_notifier_block = {
-        .notifier_call = msm_drm_buffer_state_change,
-        .priority = 1,
-};
-
-static int __init lcdscreen_speedup_init_pm_qos(void)
-{
-        msm_drm_register_client(&msm_drm_notifier_block);
-        pm_qos_add_request(&lcdspeedup_little_cpu_qos,
-                PM_QOS_C0_CPUFREQ_MIN, MIN_CPUFREQ);
-        pm_qos_add_request(&lcdspeedup_big_cpu_qos,
-                PM_QOS_C1_CPUFREQ_MIN, MIN_CPUFREQ);
-
-        return 0;
-}
-late_initcall(lcdscreen_speedup_init_pm_qos);

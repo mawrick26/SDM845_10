@@ -4076,8 +4076,6 @@ int dsi_panel_enable(struct dsi_panel *panel)
 
 	if (panel->hbm_mode)
 		dsi_panel_set_hbm_mode(panel, panel->hbm_mode);
-	/* remove print actvie ws */
-	pm_print_active_wakeup_sources_queue(false);
 	return rc;
 }
 
@@ -4172,8 +4170,6 @@ int dsi_panel_disable(struct dsi_panel *panel)
 
 error:
 	mutex_unlock(&panel->panel_lock);
-	/* add print actvie ws */
-	pm_print_active_wakeup_sources_queue(true);
 	return rc;
 }
 
