@@ -1379,7 +1379,8 @@ static void rcu_stall_kick_kthreads(struct rcu_state *rsp)
 	if (!rcu_kick_kthreads)
 		return;
 	j = READ_ONCE(rsp->jiffies_kick_kthreads);
-	if (time_after(jiffies, j) && rsp->gp_kthread) {
+	if (time_after(jiffies, j) && rsp->gp_kthread &&
+	    (rcu_gp_in_progress(rsp) || READ_ONCE(rsp->gp_flags))) {
 		WARN_ONCE(1, "Kicking %s grace-period kthread\n", rsp->name);
 		rcu_ftrace_dump(DUMP_ALL);
 		wake_up_process(rsp->gp_kthread);
@@ -2496,6 +2497,7 @@ rcu_report_qs_rdp(int cpu, struct rcu_state *rsp, struct rcu_data *rdp)
 	mask = rdp->grpmask;
 	rdp->core_needs_qs = false;
 	if ((rnp->qsmask & mask) == 0) {
+		rdp->core_needs_qs = false;
 		raw_spin_unlock_irqrestore_rcu_node(rnp, flags);
 	} else {
 		/*
@@ -4189,7 +4191,7 @@ void __init rcu_init(void)
 	}
 
 	/* Create workqueue for expedited GPs and for Tree SRCU. */
-	rcu_gp_wq = alloc_workqueue("rcu_gp", WQ_MEM_RECLAIM, 0);
+	rcu_gp_wq = alloc_workqueue("rcu_gp", WQ_POWER_EFFICIENT | WQ_MEM_RECLAIM, 0);
 	WARN_ON(!rcu_gp_wq);
 }
 
