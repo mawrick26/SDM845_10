@@ -12,6 +12,7 @@
 
 #include <linux/coresight.h>
 #include <linux/coresight-cti.h>
+#include <linux/sched/clock.h>
 #include <linux/workqueue.h>
 #include <soc/qcom/sysmon.h>
 #include "esoc-mdm.h"
