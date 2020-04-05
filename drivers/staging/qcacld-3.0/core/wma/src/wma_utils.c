@@ -4657,7 +4657,7 @@ static void wma_set_roam_offload_flag(tp_wma_handle wma, uint8_t vdev_id,
 	 * does channel map based partial scan or partial scan followed
 	 * by full scan in case no candidate is found in partial scan.
 	 */
-	if (wma->bmiss_skip_full_scan)
+		if (wma->bmiss_skip_full_scan)
 		flag |= WMI_ROAM_BMISS_FINAL_SCAN_TYPE_FLAG;
 
 		/*
