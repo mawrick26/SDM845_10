@@ -111,8 +111,3 @@ SCHED_FEAT(FIND_BEST_TARGET, false)
  *   those tasks through the mainline slow path.
  */
 SCHED_FEAT(EAS_PREFER_IDLE, true)
-
-/*
- * Request max frequency from schedutil whenever a RT task is running.
- */
-SCHED_FEAT(SUGOV_RT_MAX_FREQ, false)
