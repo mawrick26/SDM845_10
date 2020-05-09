@@ -2986,7 +2986,7 @@ enum tfa_error tfa_dev_start(struct tfa_device *tfa, int next_profile, int vstep
 	enum Tfa98xx_Error err = Tfa98xx_Error_Ok;
 	int active_profile = -1;
 
-	pr_info("tfa_dev_start enter\n");
+	pr_debug("tfa_dev_start enter\n");
 
 	/* Get currentprofile */
 	active_profile = tfa_dev_get_swprof(tfa);

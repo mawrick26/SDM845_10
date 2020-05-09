@@ -172,7 +172,7 @@ static enum tfa_error tfa98xx_tfa_start(struct tfa98xx *tfa98xx, int next_profil
 		start_time = ktime_get_boottime();
 	}
 
-	dev_info(&tfa98xx->i2c->dev, "tfa98xx_tfa_start enter\n");
+	dev_dbg(&tfa98xx->i2c->dev, "tfa98xx_tfa_start enter\n");
 
 	err = tfa_dev_start(tfa98xx->tfa, next_profile, vstep);
 
@@ -2215,7 +2215,7 @@ static void tfa98xx_dsp_init(struct tfa98xx *tfa98xx)
 
 			/* Subsystem ready, tfa init complete */
 			tfa98xx->dsp_init = TFA98XX_DSP_INIT_DONE;
-			dev_info(&tfa98xx->i2c->dev,
+			dev_dbg(&tfa98xx->i2c->dev,
 						"tfa_dev_start success (%d)\n",
 						tfa98xx->init_count);
 			/* cancel other pending init works */
@@ -2477,7 +2477,7 @@ static int tfa98xx_hw_params(struct snd_pcm_substream *substream,
 
 	/* Supported */
 	rate = params_rate(params);
-	pr_info("Requested rate: %d, sample size: %d, physical size: %d\n",
+	pr_debug("Requested rate: %d, sample size: %d, physical size: %d\n",
 			rate, snd_pcm_format_width(params_format(params)),
 			snd_pcm_format_physical_width(params_format(params)));
 
@@ -2490,7 +2490,7 @@ static int tfa98xx_hw_params(struct snd_pcm_substream *substream,
 		pr_err("tfa98xx: invalid sample rate %d.\n", rate);
 		return -EINVAL;
 	}
-	pr_info("mixer profile:container profile = [%d:%d]\n", tfa98xx_mixer_profile, prof_idx);
+	pr_debug("mixer profile:container profile = [%d:%d]\n", tfa98xx_mixer_profile, prof_idx);
 
 
 	/* update 'real' profile (container profile) */
@@ -2507,7 +2507,7 @@ static int tfa98xx_mute(struct snd_soc_dai *dai, int mute, int stream)
 	struct snd_soc_codec *codec = dai->codec;
 	struct tfa98xx *tfa98xx = snd_soc_codec_get_drvdata(codec);
 
-	dev_info(&tfa98xx->i2c->dev, "%s: state: %d\n", __func__, mute);
+	dev_dbg(&tfa98xx->i2c->dev, "%s: state: %d\n", __func__, mute);
 
 	if (no_start) {
 		pr_info("no_start parameter set no tfa_dev_start or tfa_dev_stop, returning\n");
