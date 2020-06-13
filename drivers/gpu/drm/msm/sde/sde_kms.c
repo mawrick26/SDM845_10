@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2014-2020, The Linux Foundation. All rights reserved.
  * Copyright (C) 2013 Red Hat
  * Author: Rob Clark <robdclark@gmail.com>
  *
@@ -1340,6 +1340,7 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 	};
 #ifdef CONFIG_DRM_MSM_DP
 	static const struct sde_connector_ops dp_ops = {
+		.set_info_blob = dp_connnector_set_info_blob,
 		.post_init  = dp_connector_post_init,
 		.detect     = dp_connector_detect,
 		.get_modes  = dp_connector_get_modes,
@@ -1353,6 +1354,8 @@ static int _sde_kms_setup_displays(struct drm_device *dev,
 		.cont_splash_config = NULL,
 		.get_panel_vfp = NULL,
 		.mode_needs_full_range = dp_connector_mode_needs_full_range,
+		.mode_is_cea_mode = dp_connector_mode_is_cea_mode,
+		.get_csc_type = dp_connector_get_csc_type,
 	};
 #endif
 	static const struct sde_connector_ops ext_bridge_ops = {

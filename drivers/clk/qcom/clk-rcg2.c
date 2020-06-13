@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2013, 2016-2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013, 2016-2018, 2020,
+ *
+ * The Linux Foundation. All rights reserved.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -285,7 +287,6 @@ clk_rcg2_recalc_rate(struct clk_hw *hw, unsigned long parent_rate)
 		hid_div = cfg >> CFG_SRC_DIV_SHIFT;
 		hid_div &= mask;
 	}
-
 
 	recalc_rate = clk_rcg2_calc_rate(parent_rate, m, n, mode, hid_div);
 
