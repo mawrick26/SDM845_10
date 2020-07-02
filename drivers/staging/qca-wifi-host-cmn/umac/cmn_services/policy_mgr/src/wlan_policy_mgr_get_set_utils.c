@@ -845,7 +845,7 @@ uint32_t policy_mgr_mode_specific_connection_count(
 			pm_conc_connection_list[conn_index].in_use) {
 			if (list != NULL)
 				list[count] = conn_index;
-			 count++;
+		count++;
 		}
 	}
 	qdf_mutex_release(&pm_ctx->qdf_conc_list_lock);
