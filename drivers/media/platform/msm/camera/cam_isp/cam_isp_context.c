@@ -883,8 +883,8 @@ static int __cam_isp_ctx_handle_error(struct cam_isp_context *ctx_isp,
 		if (req_isp && req_isp->bubble_report)
 			notify.error = CRM_KMD_ERR_BUBBLE;
 
-		CAM_WARN(CAM_ISP, "Notify CRM: req %lld, frame %lld\n",
-			error_request_id, ctx_isp->frame_id);
+			CAM_WARN(CAM_ISP, "Notify CRM: req %lld, frame %lld\n",
+					 error_request_id, ctx_isp->frame_id);
 
 		ctx->ctx_crm_intf->notify_err(&notify);
 		ctx_isp->substate_activated = CAM_ISP_CTX_ACTIVATED_HW_ERROR;
