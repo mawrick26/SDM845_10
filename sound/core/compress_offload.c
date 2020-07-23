@@ -578,7 +578,10 @@ snd_compr_set_params(struct snd_compr_stream *stream, unsigned long arg)
 		stream->metadata_set = false;
 		stream->next_track = false;
 
-		stream->runtime->state = SNDRV_PCM_STATE_SETUP;
+		if (stream->direction == SND_COMPRESS_PLAYBACK)
+			stream->runtime->state = SNDRV_PCM_STATE_SETUP;
+		else
+			stream->runtime->state = SNDRV_PCM_STATE_PREPARED;
 	} else {
 		return -EPERM;
 	}
@@ -695,17 +698,8 @@ static int snd_compr_start(struct snd_compr_stream *stream)
 {
 	int retval;
 
-	switch (stream->runtime->state) {
-	case SNDRV_PCM_STATE_SETUP:
-		if (stream->direction != SND_COMPRESS_CAPTURE)
-			return -EPERM;
-		break;
-	case SNDRV_PCM_STATE_PREPARED:
-		break;
-	default:
+	if (stream->runtime->state != SNDRV_PCM_STATE_PREPARED)
 		return -EPERM;
-	}
-
 	retval = stream->ops->trigger(stream, SNDRV_PCM_TRIGGER_START);
 	if (!retval)
 		stream->runtime->state = SNDRV_PCM_STATE_RUNNING;
@@ -716,19 +710,17 @@ static int snd_compr_stop(struct snd_compr_stream *stream)
 {
 	int retval;
 
-	switch (stream->runtime->state) {
-	case SNDRV_PCM_STATE_OPEN:
-	case SNDRV_PCM_STATE_SETUP:
-	case SNDRV_PCM_STATE_PREPARED:
+	if (stream->runtime->state == SNDRV_PCM_STATE_PREPARED ||
+			stream->runtime->state == SNDRV_PCM_STATE_SETUP)
 		return -EPERM;
-	default:
-		break;
-	}
-
 	retval = stream->ops->trigger(stream, SNDRV_PCM_TRIGGER_STOP);
 	if (!retval) {
 		stream->runtime->state = SNDRV_PCM_STATE_SETUP;
 		wake_up(&stream->runtime->sleep);
+		/* clear flags and stop any drain wait */
+		stream->partial_drain = false;
+		stream->metadata_set = false;
+		snd_compr_drain_notify(stream);
 		stream->runtime->total_bytes_available = 0;
 		stream->runtime->total_bytes_transferred = 0;
 	}
@@ -819,10 +811,6 @@ static int snd_compr_next_track(struct snd_compr_stream *stream)
 	if (stream->runtime->state != SNDRV_PCM_STATE_RUNNING)
 		return -EPERM;
 
-	/* next track doesn't have any meaning for capture streams */
-	if (stream->direction == SND_COMPRESS_CAPTURE)
-		return -EPERM;
-
 	/* you can signal next track if this is intended to be a gapless stream
 	 * and current track metadata is set
 	 */
@@ -865,6 +853,7 @@ static int snd_compr_partial_drain(struct snd_compr_stream *stream)
 	if (stream->next_track == false)
 		return -EPERM;
 
+	stream->partial_drain = true;
 	retval = stream->ops->trigger(stream, SND_COMPR_TRIGGER_PARTIAL_DRAIN);
 
 	stream->next_track = false;
