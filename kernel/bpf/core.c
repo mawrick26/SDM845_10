@@ -255,12 +255,20 @@ static void bpf_jit_uncharge_modmem(u32 pages)
 
 void *__weak bpf_jit_alloc_exec(unsigned long size)
 {
+#ifdef CONFIG_MODULES
 	return module_alloc(size);
+#else
+	return vmalloc_exec(size);
+#endif
 }
 
 void __weak bpf_jit_free_exec(void *addr)
 {
+#ifdef CONFIG_MODULES
 	module_memfree(addr);
+#else
+	vfree(addr);
+#endif
 }
 
 struct bpf_binary_header *
@@ -280,7 +288,11 @@ bpf_jit_binary_alloc(unsigned int proglen, u8 **image_ptr,
 
 	if (bpf_jit_charge_modmem(pages))
 		return NULL;
+#ifdef CONFIG_MODULES
 	hdr = bpf_jit_alloc_exec(size);
+#else
+	hdr = vmalloc_exec(size);
+#endif
 	if (!hdr) {
 		bpf_jit_uncharge_modmem(pages);
 		return NULL;
