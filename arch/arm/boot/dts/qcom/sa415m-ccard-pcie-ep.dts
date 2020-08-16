@@ -37,12 +37,19 @@
 
 &pcie_ep {
 	status = "okay";
+	qcom,pcie-perst-enum;
 };
 
 &ipa_hw {
 	qcom,use-ipa-in-mhi-mode;
 	qcom,ipa-config-is-auto;
 	qcom,mhi-event-ring-id-limits = <7 11>; /* start and end */
+};
+
+&emac_hw {
+	emac_emb_smmu: emac_emb_smmu {
+		qcom,smmu-s1-bypass;
+	};
 };
 
 &cnss_pcie {
