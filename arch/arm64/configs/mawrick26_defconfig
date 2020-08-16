@@ -1,5 +1,5 @@
 #
-# Mawrick26 4.9.231 Kernel Configuration
+# Mawrick26 4.9.232 Kernel Configuration
 ##########################################
 ##########################################
 CONFIG_ARM64=y
@@ -3774,6 +3774,7 @@ CONFIG_ASHMEM=y
 CONFIG_ANDROID_LOW_MEMORY_KILLER=y
 CONFIG_ANDROID_LOW_MEMORY_KILLER_AUTODETECT_OOM_ADJ_VALUES=y
 # CONFIG_ANDROID_VSOC is not set
+# CONFIG_ANDROID_LMK_NOTIFY_TRIGGER is not set
 CONFIG_ION=y
 # CONFIG_ION_TEST is not set
 # CONFIG_ION_DUMMY is not set
@@ -3971,6 +3972,7 @@ CONFIG_PANIC_ON_SSR_NOTIF_TIMEOUT=y
 # CONFIG_MSM_GLADIATOR_HANG_DETECT is not set
 # CONFIG_MSM_GLADIATOR_ERP is not set
 # CONFIG_SDX_EXT_IPC is not set
+# CONFIG_QTI_NOTIFY_SIDEBAND is not set
 CONFIG_QCOM_EUD=y
 # CONFIG_QCOM_WATCHDOG_V2 is not set
 # CONFIG_QPNP_PBS is not set
