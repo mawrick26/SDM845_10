@@ -1,5 +1,5 @@
 #
-# Mawrick26 4.9.232 Kernel Configuration
+# Mawrick26 4.9.233 Kernel Configuration
 ##########################################
 ##########################################
 CONFIG_ARM64=y
