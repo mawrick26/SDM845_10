@@ -1156,6 +1156,9 @@ again:
 			continue;
 		}
 
+		if (need_resched())
+			break;
+
 		if (pte_present(ptent)) {
 			struct page *page;
 
@@ -1238,7 +1241,6 @@ again:
 			pending_page = NULL;
 		}
 	}
-
 	if (addr != end) {
 		progress = 0;
 		goto again;
