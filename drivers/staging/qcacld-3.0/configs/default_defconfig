@@ -75,6 +75,7 @@ ifeq ($(CONFIG_ARCH_QCS40X), y)
 	CONFIG_MULTI_IF_LOG := y
 	CONFIG_DFS_PRI_MULTIPLIER := y
 	CONFIG_DFS_OVERRIDE_RF_THRESHOLD := y
+	CONFIG_RX_THREAD_PRIORITY := y
 endif
 
 #Flag to enable Legacy Fast Roaming2(LFR2)
@@ -298,6 +299,7 @@ CONFIG_DP_LFR := y
 CONFIG_HTT_PADDR64 := y
 CONFIG_RX_OL := y
 CONFIG_TX_TID_OVERRIDE := y
+CONFIG_WLAN_CLD_PM_QOS := y
 endif
 
 #Enable WLAN/Power debugfs feature only if debug_fs is enabled
@@ -338,10 +340,10 @@ else
 endif
 
 # Compile all log levels by default
-CONFIG_WLAN_LOG_FATAL := n
-CONFIG_WLAN_LOG_ERROR := n
-CONFIG_WLAN_LOG_WARN := n
-CONFIG_WLAN_LOG_INFO := n
+CONFIG_WLAN_LOG_FATAL := y
+CONFIG_WLAN_LOG_ERROR := y
+CONFIG_WLAN_LOG_WARN := y
+CONFIG_WLAN_LOG_INFO := y
 
 #Enable OL debug and wmi unified functions
 CONFIG_ATH_PERF_PWR_OFFLOAD := y
@@ -417,6 +419,10 @@ CONFIG_ATH_SUPPORT_SPECTRAL := n
 ifeq ($(CONFIG_HELIUMPLUS), y)
 CONFIG_WLAN_CUSTOM_DSCP_UP_MAP := y
 CONFIG_WLAN_SEND_DSCP_UP_MAP_TO_FW := y
+endif
+
+ifeq ($(CONFIG_ARCH_BENGAL), y)
+CONFIG_SMMU_S1_UNMAP := y
 endif
 
 #Enable WDI Event support
@@ -633,3 +639,5 @@ endif
 ifeq ($(CONFIG_ARCH_SDM660), y)
 CONFIG_WLAN_FEATURE_PKT_CAPTURE := y
 endif
+
+CONFIG_WLAN_HANG_EVENT := n

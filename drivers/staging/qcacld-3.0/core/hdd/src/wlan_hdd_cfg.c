@@ -3293,6 +3293,13 @@ struct reg_table_entry g_registry_table[] = {
 		     CFG_SUPPORT_MP0_DISCOVERY_DEFAULT,
 		     CFG_SUPPORT_MP0_DISCOVERY_MIN,
 		     CFG_SUPPORT_MP0_DISCOVERY_MAX),
+
+	REG_VARIABLE(CFG_NAN_FEATURE_CONFIG, WLAN_PARAM_Integer,
+		     struct hdd_config, nan_feature_config,
+		     VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+		     CFG_NAN_FEATURE_CONFIG_DEFAULT,
+		     CFG_NAN_FEATURE_CONFIG_MIN,
+		     CFG_NAN_FEATURE_CONFIG_MAX),
 #endif
 
 	REG_VARIABLE(CFG_ENABLE_SELF_RECOVERY, WLAN_PARAM_Integer,
@@ -3743,6 +3750,13 @@ struct reg_table_entry g_registry_table[] = {
 		     CFG_DISABLE_RX_MRC_2G_MIN,
 		     CFG_DISABLE_RX_MRC_2G_MAX),
 
+	REG_VARIABLE(CFG_ENABLE_DYNAMIC_NSS_CHAIN_CFG, WLAN_PARAM_Integer,
+		     struct hdd_config, enable_dynamic_nss_chains_cfg,
+		     VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+		     CFG_ENABLE_DYNAMIC_NSS_CHAIN_CFG_DEF,
+		     CFG_ENABLE_DYNAMIC_NSS_CHAIN_CFG_MIN,
+		     CFG_ENABLE_DYNAMIC_NSS_CHAIN_CFG_MAX),
+
 	REG_VARIABLE(CFG_DISABLE_RX_MRC_5G, WLAN_PARAM_Integer,
 		     struct hdd_config, disable_rx_mrc_5g,
 		     VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
@@ -3855,6 +3869,13 @@ struct reg_table_entry g_registry_table[] = {
 		     CFG_STA_SAP_SCC_ON_LTE_COEX_CHAN_DEFAULT,
 		     CFG_STA_SAP_SCC_ON_LTE_COEX_CHAN_MIN,
 		     CFG_STA_SAP_SCC_ON_LTE_COEX_CHAN_MAX),
+
+	REG_VARIABLE(CFG_P2P_GO_ENABLE_FORCE_SCC, WLAN_PARAM_HexInteger,
+		     struct hdd_config, go_force_scc,
+		     VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+		     CFG_P2P_GO_ENABLE_FORCE_SCC_DEFAULT,
+		     CFG_P2P_GO_ENABLE_FORCE_SCC_MIN,
+		     CFG_P2P_GO_ENABLE_FORCE_SCC_MAX),
 
 #ifdef FEATURE_WLAN_SCAN_PNO
 	REG_VARIABLE(CFG_PNO_CHANNEL_PREDICTION_NAME, WLAN_PARAM_Integer,
@@ -5183,6 +5204,14 @@ struct reg_table_entry g_registry_table[] = {
 			    (void *)
 			    CFG_ACTION_OUI_DISABLE_AGGRESSIVE_EDCA_DEFAULT),
 
+	REG_VARIABLE_STRING(CFG_ACTION_OUI_RECONN_ASSOCTIMEOUT,
+			    WLAN_PARAM_String,
+			    struct hdd_config,
+			    action_oui_str[ACTION_OUI_HOST_RECONN],
+			    VAR_FLAGS_OPTIONAL,
+			    (void *)
+			    CFG_ACTION_OUI_RECONN_ASSOCTIMEOUT_DEFAULT),
+
 	REG_VARIABLE(CFG_DTIM_1CHRX_ENABLE_NAME, WLAN_PARAM_Integer,
 		struct hdd_config, enable_dtim_1chrx,
 		VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
@@ -5653,11 +5682,19 @@ struct reg_table_entry g_registry_table[] = {
 
 #ifdef WLAN_FEATURE_SAE
 	REG_VARIABLE(CFG_IS_SAE_ENABLED_NAME, WLAN_PARAM_Integer,
-		struct hdd_config, is_sae_enabled,
-		VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
-		CFG_IS_SAE_ENABLED_DEFAULT,
-		CFG_IS_SAE_ENABLED_MIN,
-		CFG_IS_SAE_ENABLED_MAX),
+		     struct hdd_config, is_sae_enabled,
+		     VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+		     CFG_IS_SAE_ENABLED_DEFAULT,
+		     CFG_IS_SAE_ENABLED_MIN,
+		     CFG_IS_SAE_ENABLED_MAX),
+
+	REG_VARIABLE(CFG_IS_SAP_SAE_ENABLED_NAME,
+		     WLAN_PARAM_Integer,
+		     struct hdd_config, sap_sae_enabled,
+		     VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+		     CFG_IS_SAP_SAE_ENABLED_DEFAULT,
+		     CFG_IS_SAP_SAE_ENABLED_MIN,
+		     CFG_IS_SAP_SAE_ENABLED_MAX),
 #endif
 
 	REG_VARIABLE(CFG_BTM_SOLICITED_TIMEOUT, WLAN_PARAM_Integer,
@@ -6323,6 +6360,14 @@ struct reg_table_entry g_registry_table[] = {
 		     CFG_DISABLE_4WAY_HS_OFFLOAD_DEFAULT,
 		     CFG_DISABLE_4WAY_HS_OFFLOAD_MIN,
 		     CFG_DISABLE_4WAY_HS_OFFLOAD_MAX),
+
+	REG_VARIABLE(CFG_NB_COMMANDS_RATE_LIMIT, WLAN_PARAM_Integer,
+		     struct hdd_config, nb_commands_interval,
+		     VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+		     CFG_NB_COMMANDS_RATE_LIMIT_DEFAULT,
+		     CFG_NB_COMMANDS_RATE_LIMIT_MIN,
+		     CFG_NB_COMMANDS_RATE_LIMIT_MAX),
+
 #ifdef FEATURE_WLAN_TIME_SYNC_FTM
 	REG_VARIABLE(CFG_ENABLE_TIME_SYNC_FTM, WLAN_PARAM_Integer,
 		     struct hdd_config, time_sync_ftm_enable,
@@ -6345,12 +6390,34 @@ struct reg_table_entry g_registry_table[] = {
 		     CFG_TIME_SYNC_FTM_ROLE_MIN,
 		     CFG_TIME_SYNC_FTM_ROLE_MAX),
 #endif
-	REG_VARIABLE(CFG_P2P_DISABLE_ROAM, WLAN_PARAM_Integer,
-		     struct hdd_config, p2p_disable_roam,
+	REG_VARIABLE(CFG_STA_DISABLE_ROAM, WLAN_PARAM_Integer,
+		     struct hdd_config, sta_disable_roam,
 		     VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
-		     CFG_P2P_DISABLE_ROAM_DEFAULT,
-		     CFG_P2P_DISABLE_ROAM_MIN,
-		     CFG_P2P_DISABLE_ROAM_MAX),
+		     CFG_STA_DISABLE_ROAM_DEFAULT,
+		     CFG_STA_DISABLE_ROAM_MIN,
+		     CFG_STA_DISABLE_ROAM_MAX),
+
+#ifdef WLAN_FEATURE_PERIODIC_STA_STATS
+	REG_VARIABLE(CFG_PERIODIC_STATS_TIMER_INTERVAL, WLAN_PARAM_Integer,
+		     struct hdd_config, periodic_stats_timer_interval,
+		     VAR_FLAGS_OPTIONAL,
+		     CFG_PERIODIC_STATS_TIMER_INTERVAL_DEFAULT,
+		     CFG_PERIODIC_STATS_TIMER_INTERVAL_MIN,
+		     CFG_PERIODIC_STATS_TIMER_INTERVAL_MAX),
+
+	REG_VARIABLE(CFG_PERIODIC_STATS_TIMER_DURATION, WLAN_PARAM_Integer,
+		     struct hdd_config, periodic_stats_timer_duration,
+		     VAR_FLAGS_OPTIONAL,
+		     CFG_PERIODIC_STATS_TIMER_DURATION_DEFAULT,
+		     CFG_PERIODIC_STATS_TIMER_DURATION_MIN,
+		     CFG_PERIODIC_STATS_TIMER_DURATION_MAX),
+#endif
+	REG_VARIABLE(CFG_DFS_CHAN_AGEOUT_TIME, WLAN_PARAM_Integer,
+		     struct hdd_config, dfs_chan_ageout_time,
+		     VAR_FLAGS_OPTIONAL | VAR_FLAGS_RANGE_CHECK_ASSUME_DEFAULT,
+		     CFG_DFS_CHAN_AGEOUT_TIME_DEFAULT,
+		     CFG_DFS_CHAN_AGEOUT_TIME_MIN,
+		     CFG_DFS_CHAN_AGEOUT_TIME_MAX),
 };
 
 /**
@@ -7254,8 +7321,11 @@ static void hdd_wlm_cfg_log(struct hdd_context *hdd_ctx)
 static void hdd_cfg_print_sae(struct hdd_context *hdd_ctx)
 {
 	hdd_debug("Name = [%s] value = [%u]",
-		CFG_IS_SAE_ENABLED_NAME,
-		hdd_ctx->config->is_sae_enabled);
+		  CFG_IS_SAE_ENABLED_NAME,
+		  hdd_ctx->config->is_sae_enabled);
+	hdd_debug("Name = [%s] value = [%u]",
+		  CFG_IS_SAP_SAE_ENABLED_NAME,
+		  hdd_ctx->config->sap_sae_enabled);
 }
 #else
 static void hdd_cfg_print_sae(struct hdd_context *hdd_ctx)
@@ -8347,6 +8417,8 @@ void hdd_cfg_print(struct hdd_context *hdd_ctx)
 		hdd_ctx->config->enable_phy_reg_retention);
 	hdd_debug("Name = [btm_offload_config] value = [0x%x]",
 		  hdd_ctx->config->btm_offload_config);
+	hdd_debug("Name = [btm_validity_timer] value = [0x%x]",
+		  hdd_ctx->config->btm_validity_timer);
 	hdd_cfg_print_sae(hdd_ctx);
 	hdd_debug("Name = [btm_solicited_timeout] value = [0x%x]",
 		  hdd_ctx->config->btm_solicited_timeout);
@@ -8433,8 +8505,11 @@ void hdd_cfg_print(struct hdd_context *hdd_ctx)
 		  hdd_ctx->config->time_sync_ftm_role);
 #endif
 	hdd_debug("Name = [%s] value = [%d]",
-		   CFG_P2P_DISABLE_ROAM,
-		   hdd_ctx->config->p2p_disable_roam);
+		   CFG_STA_DISABLE_ROAM,
+		   hdd_ctx->config->sta_disable_roam);
+	hdd_debug("Name = [%s] Value = [%u]",
+		  CFG_DFS_CHAN_AGEOUT_TIME,
+		  hdd_ctx->config->dfs_chan_ageout_time);
 }
 
 /**
@@ -8701,7 +8776,7 @@ QDF_STATUS hdd_parse_config_ini(struct hdd_context *hdd_ctx)
 
 	hdd_debug("qcom_cfg.ini Size %zu", fw->size);
 
-	buffer = (char *)qdf_mem_malloc(fw->size);
+	buffer = (char *)qdf_mem_malloc(fw->size + 1);
 
 	if (NULL == buffer) {
 		hdd_err("qdf_mem_malloc failure");
@@ -9096,7 +9171,14 @@ static bool hdd_update_vht_cap_in_cfg(struct hdd_context *hdd_ctx)
 			hdd_err("Couldn't pass on WNI_CFG_VHT_MAX_MPDU_LENGTH to CFG");
 		}
 
-		if (config->enable2x2 && config->enable_su_tx_bformer) {
+		/* Get SU Bformer HW capability */
+		if (sme_cfg_get_int(mac_handle, WNI_CFG_VHT_SU_BEAMFORMER_CAP, &val) ==
+							QDF_STATUS_E_FAILURE) {
+			status = false;
+			hdd_err("Could not get WNI_CFG_VHT_SU_BEAMFORMER_CAP");
+		}
+
+		if (val && !config->enable_su_tx_bformer) {
 			if (sme_cfg_set_int(mac_handle,
 					WNI_CFG_VHT_SU_BEAMFORMER_CAP,
 					config->enable_su_tx_bformer) ==
@@ -9120,8 +9202,16 @@ static bool hdd_update_vht_cap_in_cfg(struct hdd_context *hdd_ctx)
 		hdd_err("Couldn't pass on WNI_CFG_VHT_RXSTBC to CFG");
 	}
 
+	/* first get HW TX STBC capability */
+	if (sme_cfg_get_int(mac_handle, WNI_CFG_VHT_TXSTBC, &val) ==
+							QDF_STATUS_E_FAILURE) {
+		status = false;
+		hdd_err("Could not get WNI_CFG_VHT_TXSTBC");
+	}
+
+	/* set TX STBC combined with ini setting capability */
 	if (sme_cfg_set_int(mac_handle, WNI_CFG_VHT_TXSTBC,
-			    config->enableTxSTBC) == QDF_STATUS_E_FAILURE) {
+			    config->enableTxSTBC && val) == QDF_STATUS_E_FAILURE) {
 		status = false;
 		hdd_err("Couldn't pass on WNI_CFG_VHT_TXSTBC to CFG");
 	}
@@ -9481,6 +9571,13 @@ bool hdd_update_config_cfg(struct hdd_context *hdd_ctx)
 		hdd_err("Couldn't pass on WNI_CFG_ASSOC_STA_LIMIT to CFG");
 	}
 
+	if (sme_cfg_set_int(mac_handle, WNI_CFG_SAP_SAE_ENABLED,
+			    config->sap_sae_enabled) ==
+			    QDF_STATUS_E_FAILURE) {
+		status = false;
+		hdd_err("Couldn't pass on WNI_CFG_SAP_SAE_ENABLED to CCM");
+	}
+
 	return status;
 }
 
@@ -9563,6 +9660,7 @@ QDF_STATUS hdd_set_policy_mgr_user_cfg(struct hdd_context *hdd_ctx)
 		hdd_ctx->config->channel_select_logic_conc;
 	user_cfg->sta_sap_scc_on_lte_coex_chan =
 		hdd_ctx->config->sta_sap_scc_on_lte_coex_chan;
+	user_cfg->go_force_scc = hdd_ctx->config->go_force_scc;
 	user_cfg->enable_dfs_master_cap =
 		hdd_ctx->config->enableDFSMasterCap;
 	status = policy_mgr_set_user_cfg(hdd_ctx->psoc, user_cfg);
@@ -10377,8 +10475,7 @@ QDF_STATUS hdd_set_sme_config(struct hdd_context *hdd_ctx)
 			pConfig->btm_trig_min_candidate_score;
 	smeConfig->csrConfig.enable_pending_list_req =
 			pConfig->enable_pending_list_req;
-	smeConfig->csrConfig.p2p_disable_roam =
-			pConfig->p2p_disable_roam;
+	smeConfig->csrConfig.sta_disable_roam = pConfig->sta_disable_roam;
 	sme_update_adaptive_11r_cap(smeConfig, pConfig);
 	sme_update_sae_single_pmk_cfg(smeConfig, pConfig);
 

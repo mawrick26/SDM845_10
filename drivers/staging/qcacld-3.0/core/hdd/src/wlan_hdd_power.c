@@ -547,7 +547,8 @@ void hdd_enable_host_offloads(struct hdd_adapter *adapter,
 	hdd_enable_arp_offload(adapter, trigger);
 	hdd_enable_ns_offload(adapter, trigger);
 	hdd_enable_mc_addr_filtering(adapter, trigger);
-	hdd_enable_hw_filter(adapter);
+	if (adapter->device_mode != QDF_NDI_MODE)
+		hdd_enable_hw_filter(adapter);
 out:
 	hdd_exit();
 
@@ -1601,6 +1602,7 @@ static void wlan_hdd_print_suspend_fail_stats(struct hdd_context *hdd_ctx)
 {
 #ifdef WLAN_DEBUG
 	struct suspend_resume_stats *stats = &hdd_ctx->suspend_resume_stats;
+#endif
 
 	hdd_err("ipa:%d, radar:%d, roam:%d, scan:%d, initial_wakeup:%d",
 		stats->suspend_fail[SUSPEND_FAIL_IPA],
@@ -1608,7 +1610,6 @@ static void wlan_hdd_print_suspend_fail_stats(struct hdd_context *hdd_ctx)
 		stats->suspend_fail[SUSPEND_FAIL_ROAM],
 		stats->suspend_fail[SUSPEND_FAIL_SCAN],
 		stats->suspend_fail[SUSPEND_FAIL_INITIAL_WAKEUP]);
-#endif
 }
 
 void wlan_hdd_inc_suspend_stats(struct hdd_context *hdd_ctx,
@@ -2331,6 +2332,7 @@ static int __wlan_hdd_cfg80211_get_txpower(struct wiphy *wiphy,
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(ndev);
 	int status;
 	struct hdd_station_ctx *sta_ctx = WLAN_HDD_GET_STATION_CTX_PTR(adapter);
+	static bool is_rate_limited;
 
 	hdd_enter_dev(ndev);
 
@@ -2355,10 +2357,14 @@ static int __wlan_hdd_cfg80211_get_txpower(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
+	HDD_IS_RATE_LIMIT_REQ(is_rate_limited,
+			      hdd_ctx->config->nb_commands_interval);
+
 	mutex_lock(&hdd_ctx->iface_change_lock);
-	if (hdd_ctx->driver_status != DRIVER_MODULES_ENABLED) {
+	if (hdd_ctx->driver_status != DRIVER_MODULES_ENABLED ||
+	    is_rate_limited) {
 		mutex_unlock(&hdd_ctx->iface_change_lock);
-		hdd_debug("Driver Module not enabled return success");
+		hdd_debug("Modules not enabled/rate limited, use cached stats");
 		/* Send cached data to upperlayer*/
 		*dbm = adapter->hdd_stats.class_a_stat.max_pwr;
 		return 0;
