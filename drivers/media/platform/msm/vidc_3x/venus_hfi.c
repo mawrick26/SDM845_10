@@ -2252,8 +2252,12 @@ static int venus_hfi_core_init(void *device)
 
 	if (dev->res->pm_qos_latency_us) {
 #ifdef CONFIG_SMP
-		dev->qos.type = PM_QOS_REQ_AFFINE_IRQ;
-		dev->qos.irq = dev->hal_data->irq;
+		if (dev->res->is_qos_type_all_cores) {
+			dev->qos.type = PM_QOS_REQ_ALL_CORES;
+		} else {
+			dev->qos.type = PM_QOS_REQ_AFFINE_IRQ;
+			dev->qos.irq = dev->hal_data->irq;
+		}
 #endif
 		pm_qos_add_request(&dev->qos, PM_QOS_CPU_DMA_LATENCY,
 				dev->res->pm_qos_latency_us);
@@ -4427,8 +4431,12 @@ static inline int __resume(struct venus_hfi_device *device)
 
 	if (device->res->pm_qos_latency_us) {
 #ifdef CONFIG_SMP
-		device->qos.type = PM_QOS_REQ_AFFINE_IRQ;
-		device->qos.irq = device->hal_data->irq;
+		if (device->res->is_qos_type_all_cores) {
+			device->qos.type = PM_QOS_REQ_ALL_CORES;
+		} else {
+			device->qos.type = PM_QOS_REQ_AFFINE_IRQ;
+			device->qos.irq = device->hal_data->irq;
+		}
 #endif
 		pm_qos_add_request(&device->qos, PM_QOS_CPU_DMA_LATENCY,
 				device->res->pm_qos_latency_us);
