@@ -609,6 +609,7 @@ static void add_profiling_buffer(struct kgsl_device *device,
 		return;
 	}
 
+
 	if (!id) {
 		cmdobj->profiling_buffer_gpuaddr = gpuaddr;
 	} else {

@@ -57,9 +57,13 @@
 #define PCIE20_PARF_CLKREQ_OVERRIDE	0x2B0
 #define PCIE20_PARF_CLKREQ_IN_OVERRIDE_STS	BIT(5)
 #define PCIE20_PARF_CLKREQ_OE_OVERRIDE_STS	BIT(4)
-#define PCIE20_PARF_CLKREQ_IN_OVERRIDE_VAL	BIT(3)
+#define PCIE20_PARF_CLKREQ_IN_OVERRIDE_VAL_MASK	BIT(3)
+#define PCIE20_PARF_CLKREQ_IN_OVERRIDE_VAL_ASSERT	0
+#define PCIE20_PARF_CLKREQ_IN_OVERRIDE_VAL_DEASSERT	1
 #define PCIE20_PARF_CLKREQ_OE_OVERRIDE_VAL	BIT(2)
-#define PCIE20_PARF_CLKREQ_IN_OVERRIDE_ENABLE	BIT(1)
+#define PCIE20_PARF_CLKREQ_IN_OVERRIDE_ENABLE_MASK	BIT(1)
+#define PCIE20_PARF_CLKREQ_IN_OVERRIDE_ENABLE_DIS	0
+#define PCIE20_PARF_CLKREQ_IN_OVERRIDE_ENABLE_EN	1
 #define PCIE20_PARF_CLKREQ_OE_OVERRIDE_ENABLE	BIT(0)
 
 #define PCIE20_PARF_SLV_ADDR_MSB_CTRL  0x2C0
@@ -174,7 +178,7 @@
 #define LINK_UP_CHECK_MAX_COUNT		      30000
 #define BME_TIMEOUT_US_MIN	              1000
 #define BME_TIMEOUT_US_MAX	              1000
-#define BME_CHECK_MAX_COUNT		      30000
+#define BME_CHECK_MAX_COUNT		      100000
 #define PHY_STABILIZATION_DELAY_US_MIN	      1000
 #define PHY_STABILIZATION_DELAY_US_MAX	      1000
 #define REFCLK_STABILIZATION_DELAY_US_MIN     1000
@@ -391,7 +395,6 @@ struct ep_pcie_dev_t {
 	bool                         config_mmio_init;
 	bool                         enumerated;
 	enum ep_pcie_link_status     link_status;
-	bool                         perst_deast;
 	bool                         power_on;
 	bool                         suspending;
 	bool                         l23_ready;
@@ -399,12 +402,13 @@ struct ep_pcie_dev_t {
 	struct ep_pcie_msi_config    msi_cfg;
 	bool                         no_notify;
 	bool                         client_ready;
+	atomic_t		     ep_pcie_dev_wake;
+	atomic_t                     perst_deast;
 
 	struct ep_pcie_register_event *event_reg;
 	struct work_struct	     handle_perst_work;
 	struct work_struct           handle_bme_work;
 	struct work_struct           handle_d3cold_work;
-	atomic_t		     ep_pcie_dev_wake;
 	struct work_struct           handle_d3hot_sleep_work;
 	struct work_struct	     sched_inact_timer;
 	struct workqueue_struct	     *d3hot_sleep_wq;
