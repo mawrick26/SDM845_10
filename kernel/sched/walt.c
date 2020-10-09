@@ -3271,12 +3271,13 @@ void walt_irq_work(struct irq_work *irq_work)
 		num_cpus = cpumask_weight(&cluster_online_cpus);
 
 		for_each_cpu(cpu, &cluster_online_cpus) {
+			int flag = SCHED_CPUFREQ_WALT;
 
 			rq = cpu_rq(cpu);
 
 			if (is_migration) {
 				if (rq->notif_pending) {
-					flag = SCHED_CPUFREQ_INTERCLUSTER_MIG;
+					flag |= SCHED_CPUFREQ_INTERCLUSTER_MIG;
 					rq->notif_pending = false;
 				}
 			}
