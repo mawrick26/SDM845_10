@@ -779,7 +779,6 @@ adreno_ringbuffer_addcmds(struct adreno_ringbuffer *rb,
 				SCRATCH_RPTR_GPU_ADDR(device, rb->id));
 	}
 
-
 	/*
 	 * If we have more ringbuffer commands than space reserved
 	 * in ringbuffer BUG() to fix this because it will lead to

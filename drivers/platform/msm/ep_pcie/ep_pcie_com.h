@@ -430,6 +430,7 @@ struct ep_pcie_dev_t {
 	struct work_struct	     handle_perst_work;
 	struct work_struct           handle_bme_work;
 	struct work_struct           handle_d3cold_work;
+	atomic_t		     ep_pcie_dev_wake;
 	struct work_struct           handle_d3hot_sleep_work;
 	struct work_struct	     sched_inact_timer;
 	struct workqueue_struct	     *d3hot_sleep_wq;
