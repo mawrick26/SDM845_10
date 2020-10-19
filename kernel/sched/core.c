@@ -2871,21 +2871,20 @@ static struct rq *finish_task_switch(struct task_struct *prev)
 	fire_sched_in_preempt_notifiers(current);
 	if (mm)
 		mmdrop(mm);
-	if (unlikely(prev_state  == TASK_DEAD)) {
-			if (prev->sched_class->task_dead)
-				prev->sched_class->task_dead(prev);
+	if (unlikely(prev_state == TASK_DEAD)) {
+		if (prev->sched_class->task_dead)
+			prev->sched_class->task_dead(prev);
 
-			/*
-			 * Remove function-return probe instances associated with this
-			 * task and put them back on the free list.
-			 */
-			kprobe_flush_task(prev);
+		/*
+		 * Remove function-return probe instances associated with this
+		 * task and put them back on the free list.
+		 */
+		kprobe_flush_task(prev);
 
-			/* Task is done with its stack. */
-			put_task_stack(prev);
+		/* Task is done with its stack. */
+		put_task_stack(prev);
 
-			put_task_struct(prev);
-
+		put_task_struct(prev);
 	}
 
 	tick_nohz_task_switch();
@@ -3621,8 +3620,23 @@ static void __sched notrace __schedule(bool preempt)
 
 void __noreturn do_task_dead(void)
 {
+	/*
+	 * The setting of TASK_RUNNING by try_to_wake_up() may be delayed
+	 * when the following two conditions become true.
+	 *   - There is race condition of mmap_sem (It is acquired by
+	 *     exit_mm()), and
+	 *   - SMI occurs before setting TASK_RUNINNG.
+	 *     (or hypervisor of virtual machine switches to other guest)
+	 *  As a result, we may become TASK_RUNNING after becoming TASK_DEAD
+	 *
+	 * To avoid it, we have to wait for releasing tsk->pi_lock which
+	 * is held by try_to_wake_up()
+	 */
+	smp_mb();
+	raw_spin_unlock_wait(&current->pi_lock);
+
 	/* causes final put_task_struct in finish_task_switch(). */
-	set_special_state(TASK_DEAD);
+	__set_current_state(TASK_DEAD);
 	current->flags |= PF_NOFREEZE;	/* tell freezer to ignore us */
 	__schedule(false);
 	BUG();
