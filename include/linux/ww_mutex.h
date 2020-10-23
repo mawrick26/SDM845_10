@@ -186,6 +186,11 @@ static inline void ww_acquire_fini(struct ww_acquire_ctx *ctx)
 #endif
 }
 
+extern int __must_check __ww_mutex_lock(struct ww_mutex *lock,
+					struct ww_acquire_ctx *ctx);
+extern int __must_check __ww_mutex_lock_interruptible(struct ww_mutex *lock,
+						      struct ww_acquire_ctx *ctx);
+
 /**
  * ww_mutex_lock - acquire the w/w mutex
  * @lock: the mutex to be acquired
@@ -215,8 +220,14 @@ static inline void ww_acquire_fini(struct ww_acquire_ctx *ctx)
  *
  * A mutex acquired with this function must be released with ww_mutex_unlock.
  */
-extern int __must_check ww_mutex_lock(struct ww_mutex *lock,
-				      struct ww_acquire_ctx *ctx);
+static inline int ww_mutex_lock(struct ww_mutex *lock, struct ww_acquire_ctx *ctx)
+{
+	if (ctx)
+		return __ww_mutex_lock(lock, ctx);
+
+	mutex_lock(&lock->base);
+	return 0;
+}
 
 /**
  * ww_mutex_lock_interruptible - acquire the w/w mutex, interruptible
@@ -248,8 +259,14 @@ extern int __must_check ww_mutex_lock(struct ww_mutex *lock,
  *
  * A mutex acquired with this function must be released with ww_mutex_unlock.
  */
-extern int __must_check ww_mutex_lock_interruptible(struct ww_mutex *lock,
-						    struct ww_acquire_ctx *ctx);
+static inline int __must_check ww_mutex_lock_interruptible(struct ww_mutex *lock,
+							   struct ww_acquire_ctx *ctx)
+{
+	if (ctx)
+		return __ww_mutex_lock_interruptible(lock, ctx);
+	else
+		return mutex_lock_interruptible(&lock->base);
+}
 
 /**
  * ww_mutex_lock_slow - slowpath acquiring of the w/w mutex

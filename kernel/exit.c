@@ -56,7 +56,6 @@
 #include <linux/kcov.h>
 
 #include "sched/tune.h"
-#include <linux/rcuwait.h>
 
 #include <linux/uaccess.h>
 #include <asm/unistd.h>
@@ -281,35 +280,6 @@ retry:
 	return task;
 }
 
-void rcuwait_wake_up(struct rcuwait *w)
-{
-	struct task_struct *task;
-
-	rcu_read_lock();
-
-	/*
-	 * Order condition vs @task, such that everything prior to the load
-	 * of @task is visible. This is the condition as to why the user called
-	 * rcuwait_trywake() in the first place. Pairs with set_current_state()
-	 * barrier (A) in rcuwait_wait_event().
-	 *
-	 *    WAIT                WAKE
-	 *    [S] tsk = current	  [S] cond = true
-	 *        MB (A)	      MB (B)
-	 *    [L] cond		  [L] tsk
-	 */
-	smp_rmb(); /* (B) */
-
-	/*
-	 * Avoid using task_rcu_dereference() magic as long as we are careful,
-	 * see comment in rcuwait_wait_event() regarding ->exit_state.
-	 */
-	task = rcu_dereference(w->task);
-	if (task)
-		wake_up_process(task);
-	rcu_read_unlock();
-}
-
 struct task_struct *try_get_task_struct(struct task_struct **ptask)
 {
 	struct task_struct *task;
@@ -496,13 +466,13 @@ assign_new_owner:
  * Turn us into a lazy TLB process if we
  * aren't already..
  */
-static void exit_mm(void)
+static void exit_mm(struct task_struct *tsk)
 {
-	struct mm_struct *mm = current->mm;
+	struct mm_struct *mm = tsk->mm;
 	struct core_state *core_state;
 	int mm_released;
 
-	mm_release(current, mm);
+	mm_release(tsk, mm);
 	if (!mm)
 		return;
 	sync_mm_rss(mm);
@@ -520,7 +490,7 @@ static void exit_mm(void)
 
 		up_read(&mm->mmap_sem);
 
-		self.task = current;
+		self.task = tsk;
 		self.next = xchg(&core_state->dumper.next, &self);
 		/*
 		 * Implies mb(), the result of xchg() must be visible
@@ -530,29 +500,29 @@ static void exit_mm(void)
 			complete(&core_state->startup);
 
 		for (;;) {
-			set_current_state(TASK_UNINTERRUPTIBLE);
+			set_task_state(tsk, TASK_UNINTERRUPTIBLE);
 			if (!self.task) /* see coredump_finish() */
 				break;
 			freezable_schedule();
 		}
-		__set_current_state(TASK_RUNNING);
+		__set_task_state(tsk, TASK_RUNNING);
 		down_read(&mm->mmap_sem);
 	}
 	atomic_inc(&mm->mm_count);
-	BUG_ON(mm != current->active_mm);
+	BUG_ON(mm != tsk->active_mm);
 	/* more a memory barrier than a real lock */
-	task_lock(current);
-	current->mm = NULL;
+	task_lock(tsk);
+	tsk->mm = NULL;
 	up_read(&mm->mmap_sem);
 	enter_lazy_tlb(mm, current);
-	task_unlock(current);
+	task_unlock(tsk);
 	mm_update_next_owner(mm);
 
 	mm_released = mmput(mm);
 	if (test_thread_flag(TIF_MEMDIE))
 		exit_oom_victim();
 	if (mm_released)
-		set_tsk_thread_flag(current, TIF_MM_RELEASED);
+		set_tsk_thread_flag(tsk, TIF_MM_RELEASED);
 }
 
 static struct task_struct *find_alive_thread(struct task_struct *p)
@@ -884,7 +854,7 @@ void __noreturn do_exit(long code)
 	tsk->exit_code = code;
 	taskstats_exit(tsk, group_dead);
 
-	exit_mm();
+	exit_mm(tsk);
 
 	if (group_dead)
 		acct_process();

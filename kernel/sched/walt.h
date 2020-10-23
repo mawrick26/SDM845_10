@@ -306,6 +306,7 @@ static inline void walt_sched_init_rq(struct rq *rq) { }
 static inline void walt_rotate_work_init(void) { }
 static inline void walt_rotation_checkpoint(int nr_big) { }
 static inline void walt_update_last_enqueue(struct task_struct *p) { }
+
 static inline void update_task_ravg(struct task_struct *p, struct rq *rq,
 				int event, u64 wallclock, u64 irqtime) { }
 static inline void walt_inc_cumulative_runnable_avg(struct rq *rq,

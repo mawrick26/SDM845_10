@@ -703,8 +703,9 @@ static int crypt_iv_tcw_whitening(struct crypt_config *cc,
 	int i, r;
 
 	/* xor whitening with sector number */
-	crypto_xor_cpy(buf, tcw->whitening, (u8 *)&sector, 8);
-	crypto_xor_cpy(&buf[8], tcw->whitening + 8, (u8 *)&sector, 8);
+	memcpy(buf, tcw->whitening, TCW_WHITENING_SIZE);
+	crypto_xor(buf, (u8 *)&sector, 8);
+	crypto_xor(&buf[8], (u8 *)&sector, 8);
 
 	/* calculate crc32 for every 32bit part and xor it */
 	desc->tfm = tcw->crc32_tfm;
@@ -747,10 +748,10 @@ static int crypt_iv_tcw_gen(struct crypt_config *cc, u8 *iv,
 	}
 
 	/* Calculate IV */
-	crypto_xor_cpy(iv, tcw->iv_seed, (u8 *)&sector, 8);
+	memcpy(iv, tcw->iv_seed, cc->iv_size);
+	crypto_xor(iv, (u8 *)&sector, 8);
 	if (cc->iv_size > 8)
-		crypto_xor_cpy(&iv[8], tcw->iv_seed + 8, (u8 *)&sector,
-			       cc->iv_size - 8);
+		crypto_xor(&iv[8], (u8 *)&sector, cc->iv_size - 8);
 
 	return r;
 }
@@ -1232,14 +1233,14 @@ continue_locked:
 		spin_unlock_irq(&cc->write_thread_wait.lock);
 
 		if (unlikely(kthread_should_stop())) {
-			set_current_state(TASK_RUNNING);
+			set_task_state(current, TASK_RUNNING);
 			remove_wait_queue(&cc->write_thread_wait, &wait);
 			break;
 		}
 
 		schedule();
 
-		set_current_state(TASK_RUNNING);
+		set_task_state(current, TASK_RUNNING);
 		spin_lock_irq(&cc->write_thread_wait.lock);
 		__remove_wait_queue(&cc->write_thread_wait, &wait);
 		goto continue_locked;

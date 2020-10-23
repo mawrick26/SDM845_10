@@ -241,7 +241,7 @@ extern void proc_sched_set_task(struct task_struct *p);
 extern char ___assert_task_state[1 - 2*!!(
 		sizeof(TASK_STATE_TO_CHAR_STR)-1 != ilog2(TASK_STATE_MAX)+1)];
 
-/* Convenience macros for the sake of set_current_state */
+/* Convenience macros for the sake of set_task_state */
 #define TASK_KILLABLE		(TASK_WAKEKILL | TASK_UNINTERRUPTIBLE)
 #define TASK_STOPPED		(TASK_WAKEKILL | __TASK_STOPPED)
 #define TASK_TRACED		(TASK_WAKEKILL | __TASK_TRACED)
@@ -268,37 +268,16 @@ extern char ___assert_task_state[1 - 2*!!(
 
 #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
 
-/*
- * Special states are those that do not use the normal wait-loop pattern. See
- * the comment with set_special_state().
- */
-#define is_special_task_state(state)				\
-	((state) & (__TASK_STOPPED | __TASK_TRACED | TASK_PARKED | TASK_DEAD))
-
-#define __set_current_state(state_value)			\
+#define __set_task_state(tsk, state_value)			\
 	do {							\
-		WARN_ON_ONCE(is_special_task_state(state_value));\
-		current->task_state_change = _THIS_IP_;		\
-		current->state = (state_value);			\
+		(tsk)->task_state_change = _THIS_IP_;		\
+		(tsk)->state = (state_value);			\
 	} while (0)
-
-#define set_current_state(state_value)				\
+#define set_task_state(tsk, state_value)			\
 	do {							\
-		WARN_ON_ONCE(is_special_task_state(state_value));\
-		current->task_state_change = _THIS_IP_;		\
-		smp_store_mb(current->state, (state_value));		\
+		(tsk)->task_state_change = _THIS_IP_;		\
+		smp_store_mb((tsk)->state, (state_value));		\
 	} while (0)
-
-#define set_special_state(state_value)					\
-	do {								\
-		unsigned long flags; /* may shadow */			\
-		WARN_ON_ONCE(!is_special_task_state(state_value));	\
-		raw_spin_lock_irqsave(&current->pi_lock, flags);	\
-		current->task_state_change = _THIS_IP_;			\
-		current->state = (state_value);				\
-		raw_spin_unlock_irqrestore(&current->pi_lock, flags);	\
-	} while (0)
-#else
 
 /*
  * set_current_state() includes a barrier so that the write of current->state
@@ -311,26 +290,39 @@ extern char ___assert_task_state[1 - 2*!!(
  *
  * If the caller does not need such serialisation then use __set_current_state()
  */
+#define __set_current_state(state_value)			\
+	do {							\
+		current->task_state_change = _THIS_IP_;		\
+		current->state = (state_value);			\
+	} while (0)
+#define set_current_state(state_value)				\
+	do {							\
+		current->task_state_change = _THIS_IP_;		\
+		smp_store_mb(current->state, (state_value));		\
+	} while (0)
 
-#define __set_current_state(state_value)				\
-	current->state = (state_value)
+#else
 
-#define set_current_state(state_value)					\
-	smp_store_mb(current->state, (state_value))
+#define __set_task_state(tsk, state_value)		\
+	do { (tsk)->state = (state_value); } while (0)
+#define set_task_state(tsk, state_value)		\
+	smp_store_mb((tsk)->state, (state_value))
 
 /*
- * set_special_state() should be used for those states when the blocking task
- * can not use the regular condition based wait-loop. In that case we must
- * serialize against wakeups such that any possible in-flight TASK_RUNNING stores
- * will not collide with our state change.
+ * set_current_state() includes a barrier so that the write of current->state
+ * is correctly serialised wrt the caller's subsequent test of whether to
+ * actually sleep:
+ *
+ *	set_current_state(TASK_UNINTERRUPTIBLE);
+ *	if (do_i_need_to_sleep())
+ *		schedule();
+ *
+ * If the caller does not need such serialisation then use __set_current_state()
  */
-#define set_special_state(state_value)					\
-	do {								\
-		unsigned long flags; /* may shadow */			\
-		raw_spin_lock_irqsave(&current->pi_lock, flags);	\
-		current->state = (state_value);				\
-		raw_spin_unlock_irqrestore(&current->pi_lock, flags);	\
-	} while (0)
+#define __set_current_state(state_value)		\
+	do { current->state = (state_value); } while (0)
+#define set_current_state(state_value)			\
+	smp_store_mb(current->state, (state_value))
 
 #endif
 
@@ -1092,12 +1084,6 @@ struct wake_q_head {
 #define WAKE_Q(name)					\
 	struct wake_q_head name = { WAKE_Q_TAIL, &name.first }
 
-static inline void wake_q_init(struct wake_q_head *head)
-{
-	head->first = WAKE_Q_TAIL;
-	head->lastp = &head->first;
-}
-
 extern void wake_q_add(struct wake_q_head *head,
 		       struct task_struct *task);
 extern void wake_up_q(struct wake_q_head *head);
@@ -1188,6 +1174,7 @@ struct eas_stats {
 
 	/* select_energy_cpu_brute() stats */
 	u64 secb_attempts;
+	u64 secb_sync;
 	u64 secb_idle_bt;
 	u64 secb_insuff_cap;
 	u64 secb_no_nrg_sav;
@@ -1515,6 +1502,7 @@ struct sched_statistics {
 
 	/* energy_aware_wake_cpu() */
 	u64			nr_wakeups_secb_attempts;
+	u64			nr_wakeups_secb_sync;
 	u64			nr_wakeups_secb_idle_bt;
 	u64			nr_wakeups_secb_insuff_cap;
 	u64			nr_wakeups_secb_no_nrg_sav;
@@ -1748,14 +1736,6 @@ struct task_struct {
 	unsigned long wakee_flip_decay_ts;
 	struct task_struct *last_wakee;
 
-	/*
-	* recent_used_cpu is initially set as the last CPU used by a task
-	* that wakes affine another task. Waker/wakee relationships can
-	* push tasks around a CPU where each wakeup moves to the next one.
-	* Tracking a recently used CPU allows a quick search for a recently
-	* used CPU that may be idle.
-	*/
-	int recent_used_cpu;
 	int wake_cpu;
 #endif
 	int on_rq;
@@ -3875,9 +3855,9 @@ static inline void ptrace_signal_wake_up(struct task_struct *t, bool resume)
 static inline unsigned int task_cpu(const struct task_struct *p)
 {
 #ifdef CONFIG_THREAD_INFO_IN_TASK
-	return READ_ONCE(p->cpu);
+	return p->cpu;
 #else
-	return READ_ONCE(task_thread_info(p)->cpu);
+	return task_thread_info(p)->cpu;
 #endif
 }
 

@@ -1033,19 +1033,6 @@ ktime_t tick_nohz_get_sleep_length(void)
 }
 
 /**
- * tick_nohz_get_idle_calls_cpu - return the current idle calls counter value
- * for a particular CPU.
- *
- * Called from the schedutil frequency scaling governor in scheduler context.
- */
-unsigned long tick_nohz_get_idle_calls_cpu(int cpu)
-{
-	struct tick_sched *ts = tick_get_tick_sched(cpu);
-
-	return ts->idle_calls;
-}
-
-/**
  * tick_nohz_get_idle_calls - return the current idle calls counter value
  *
  * Called from the schedutil frequency scaling governor in scheduler context.
@@ -1324,17 +1311,6 @@ void tick_setup_sched_timer(void)
 #endif /* HIGH_RES_TIMERS */
 
 #if defined CONFIG_NO_HZ_COMMON || defined CONFIG_HIGH_RES_TIMERS
-
-static inline void clear_tick_sched(struct tick_sched *ts)
-{
-	ktime_t idle_sleeptime = ts->idle_sleeptime;
-	ktime_t iowait_sleeptime = ts->iowait_sleeptime;
-
-	memset(ts, 0, sizeof(*ts));
-	ts->idle_sleeptime = idle_sleeptime;
-	ts->iowait_sleeptime = iowait_sleeptime;
-}
-
 void tick_cancel_sched_timer(int cpu)
 {
 	struct tick_sched *ts = &per_cpu(tick_cpu_sched, cpu);
@@ -1344,7 +1320,7 @@ void tick_cancel_sched_timer(int cpu)
 		hrtimer_cancel(&ts->sched_timer);
 # endif
 
-	clear_tick_sched(ts);
+	memset(ts, 0, sizeof(*ts));
 }
 #endif
 

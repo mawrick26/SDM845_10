@@ -686,12 +686,11 @@ TRACE_EVENT(sched_energy_diff,
 TRACE_EVENT(sched_task_util,
 
 	TP_PROTO(struct task_struct *p, int next_cpu, int backup_cpu,
-		 int target_cpu, bool need_idle, int fastpath,
-		 bool placement_boost, int rtg_cpu, u64 start_t,
-		 bool boosted, bool sync_boost),
+		 int target_cpu, bool sync, bool need_idle, int fastpath,
+		 bool placement_boost, int rtg_cpu, u64 start_t),
 
-	TP_ARGS(p, next_cpu, backup_cpu, target_cpu, need_idle, fastpath,
-		placement_boost, rtg_cpu, start_t, boosted, sync_boost),
+	TP_ARGS(p, next_cpu, backup_cpu, target_cpu, sync, need_idle, fastpath,
+		placement_boost, rtg_cpu, start_t),
 
 	TP_STRUCT__entry(
 		__field(int, pid			)
@@ -701,13 +700,12 @@ TRACE_EVENT(sched_task_util,
 		__field(int, next_cpu			)
 		__field(int, backup_cpu			)
 		__field(int, target_cpu			)
+		__field(bool, sync			)
 		__field(bool, need_idle			)
 		__field(int, fastpath			)
 		__field(bool, placement_boost		)
 		__field(int, rtg_cpu			)
 		__field(u64, latency			)
-		__field(bool, boosted			)
-		__field(bool, sync_boost		)
 	),
 
 	TP_fast_assign(
@@ -718,17 +716,16 @@ TRACE_EVENT(sched_task_util,
 		__entry->next_cpu		= next_cpu;
 		__entry->backup_cpu		= backup_cpu;
 		__entry->target_cpu		= target_cpu;
+		__entry->sync			= sync;
 		__entry->need_idle		= need_idle;
 		__entry->fastpath		= fastpath;
 		__entry->placement_boost	= placement_boost;
 		__entry->rtg_cpu		= rtg_cpu;
 		__entry->latency		= (sched_clock() - start_t);
-		__entry->boosted		= boosted;
-		__entry->sync_boost		= sync_boost;
 	),
 
-	TP_printk("pid=%d comm=%s util=%lu prev_cpu=%d next_cpu=%d backup_cpu=%d target_cpu=%d need_idle=%d fastpath=%d placement_boost=%d rtg_cpu=%d latency=%llu boosted=%d sync_boost=%d",
-		__entry->pid, __entry->comm, __entry->util, __entry->prev_cpu, __entry->next_cpu, __entry->backup_cpu, __entry->target_cpu, __entry->need_idle,  __entry->fastpath, __entry->placement_boost, __entry->rtg_cpu, __entry->latency, __entry->boosted, __entry->sync_boost)
+	TP_printk("pid=%d comm=%s util=%lu prev_cpu=%d next_cpu=%d backup_cpu=%d target_cpu=%d sync=%d need_idle=%d fastpath=%d placement_boost=%d rtg_cpu=%d latency=%llu",
+		__entry->pid, __entry->comm, __entry->util, __entry->prev_cpu, __entry->next_cpu, __entry->backup_cpu, __entry->target_cpu, __entry->sync, __entry->need_idle,  __entry->fastpath, __entry->placement_boost, __entry->rtg_cpu, __entry->latency)
 );
 
 #endif
@@ -1585,12 +1582,11 @@ TRACE_EVENT(sched_find_best_target,
 
 	TP_PROTO(struct task_struct *tsk, bool prefer_idle,
 		unsigned long min_util, int start_cpu,
-		int best_idle, int best_active, int most_spare_cap, int target,
-		int backup_cpu, bool boosted),
+		int best_idle, int best_active, int target,
+		int backup_cpu),
 
 	TP_ARGS(tsk, prefer_idle, min_util, start_cpu,
-		best_idle, best_active, most_spare_cap, target,
-		backup_cpu, boosted),
+		best_idle, best_active, target, backup_cpu),
 
 	TP_STRUCT__entry(
 		__array( char,	comm,	TASK_COMM_LEN	)
@@ -1600,10 +1596,8 @@ TRACE_EVENT(sched_find_best_target,
 		__field( int,	start_cpu		)
 		__field( int,	best_idle		)
 		__field( int,	best_active		)
-		__field( int,	most_spare_cap		)
 		__field( int,	target			)
-		__field( int,	backup_cpu)
-		__field( bool,	boosted			)
+		__field( int,	backup_cpu		)
 	),
 
 	TP_fast_assign(
@@ -1614,21 +1608,17 @@ TRACE_EVENT(sched_find_best_target,
 		__entry->start_cpu 	= start_cpu;
 		__entry->best_idle	= best_idle;
 		__entry->best_active	= best_active;
-		__entry->most_spare_cap	= most_spare_cap;
 		__entry->target		= target;
 		__entry->backup_cpu	= backup_cpu;
-		__entry->boosted	= boosted;
 	),
 
 	TP_printk("pid=%d comm=%s prefer_idle=%d start_cpu=%d "
-		  "best_idle=%d best_active=%d most_spare_cap=%d target=%d backup=%d boosted=%d",
+		  "best_idle=%d best_active=%d target=%d backup=%d",
 		__entry->pid, __entry->comm,
 		__entry->prefer_idle, __entry->start_cpu,
 		__entry->best_idle, __entry->best_active,
-		__entry->most_spare_cap,
 		__entry->target,
-		__entry->backup_cpu,
-		__entry->boosted)
+		__entry->backup_cpu)
 );
 
 TRACE_EVENT(sched_group_energy,

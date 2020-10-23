@@ -319,9 +319,8 @@ struct cfs_bandwidth {
 	u64 quota, runtime;
 	s64 hierarchical_quota;
 	u64 runtime_expires;
-	int expires_seq;
 
-	short idle, period_active;
+	int idle, period_active;
 	struct hrtimer period_timer, slack_timer;
 	struct list_head throttled_cfs_rq;
 
@@ -529,7 +528,6 @@ struct cfs_rq {
 #endif
 
 	int runtime_enabled;
-	int expires_seq;
 	u64 runtime_expires;
 	s64 runtime_remaining;
 
@@ -569,9 +567,6 @@ struct rt_rq {
 	unsigned long rt_nr_total;
 	int overloaded;
 	struct plist_head pushable_tasks;
-
-	struct sched_avg avg;
-
 #endif /* CONFIG_SMP */
 	int rt_queued;
 
@@ -720,7 +715,6 @@ struct rq {
 #endif
 	#define CPU_LOAD_IDX_MAX 5
 	unsigned long cpu_load[CPU_LOAD_IDX_MAX];
-	unsigned int nr_pinned_tasks;
 	unsigned int misfit_task;
 #ifdef CONFIG_NO_HZ_COMMON
 #ifdef CONFIG_SMP
@@ -1309,9 +1303,9 @@ static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 	 */
 	smp_wmb();
 #ifdef CONFIG_THREAD_INFO_IN_TASK
-	WRITE_ONCE(p->cpu, cpu);
+	p->cpu = cpu;
 #else
-	WRITE_ONCE(task_thread_info(p)->cpu, cpu);
+	task_thread_info(p)->cpu = cpu;
 #endif
 	p->wake_cpu = cpu;
 #endif
@@ -1327,6 +1321,8 @@ static inline void __set_task_cpu(struct task_struct *p, unsigned int cpu)
 # define const_debug const
 #endif
 
+extern const_debug unsigned int sysctl_sched_features;
+
 #define SCHED_FEAT(name, enabled)	\
 	__SCHED_FEAT_##name ,
 
@@ -1338,13 +1334,6 @@ enum {
 #undef SCHED_FEAT
 
 #if defined(CONFIG_SCHED_DEBUG) && defined(HAVE_JUMP_LABEL)
-
-/*
- * To support run-time toggling of sched features, all the translation units
- * (but core.c) reference the sysctl_sched_features defined in core.c.
- */
-extern const_debug unsigned int sysctl_sched_features;
-
 #define SCHED_FEAT(name, enabled)					\
 static __always_inline bool static_branch_##name(struct static_key *key) \
 {									\
@@ -1352,27 +1341,13 @@ static __always_inline bool static_branch_##name(struct static_key *key) \
 }
 
 #include "features.h"
+
 #undef SCHED_FEAT
 
 extern struct static_key sched_feat_keys[__SCHED_FEAT_NR];
 #define sched_feat(x) (static_branch_##x(&sched_feat_keys[__SCHED_FEAT_##x]))
-
 #else /* !(SCHED_DEBUG && HAVE_JUMP_LABEL) */
-
-/*
- * Each translation unit has its own copy of sysctl_sched_features to allow
- * constants propagation at compile time and compiler optimization based on
- * features default.
- */
-#define SCHED_FEAT(name, enabled)	\
-	(1UL << __SCHED_FEAT_##name) * enabled |
-static const_debug __maybe_unused unsigned int sysctl_sched_features =
-#include "features.h"
-	0;
-#undef SCHED_FEAT
-
 #define sched_feat(x) !!(sysctl_sched_features & (1UL << __SCHED_FEAT_##x))
-
 #endif /* SCHED_DEBUG && HAVE_JUMP_LABEL */
 
 extern struct static_key_false sched_numa_balancing;
@@ -1412,7 +1387,7 @@ static inline int task_on_rq_queued(struct task_struct *p)
 
 static inline int task_on_rq_migrating(struct task_struct *p)
 {
-	return READ_ONCE(p->on_rq) == TASK_ON_RQ_MIGRATING;
+	return p->on_rq == TASK_ON_RQ_MIGRATING;
 }
 
 #ifndef prepare_arch_switch
@@ -1840,7 +1815,6 @@ static inline int hrtick_enabled(struct rq *rq)
 
 #ifdef CONFIG_SMP
 extern void sched_avg_update(struct rq *rq);
-extern unsigned long sched_get_rt_rq_util(int cpu);
 
 #ifndef arch_scale_freq_capacity
 static __always_inline
@@ -1881,13 +1855,6 @@ unsigned long arch_scale_cpu_capacity(struct sched_domain *sd, int cpu)
 }
 #endif
 
-#ifndef arch_update_cpu_capacity
-static __always_inline
-void arch_update_cpu_capacity(int cpu)
-{
-}
-#endif
-
 #ifdef CONFIG_SMP
 static inline unsigned long capacity_of(int cpu)
 {
@@ -1904,7 +1871,7 @@ static inline unsigned long task_util(struct task_struct *p)
 #ifdef CONFIG_SCHED_WALT
 	return p->ravg.demand_scaled;
 #endif
-	return READ_ONCE(p->se.avg.util_avg);
+	return p->se.avg.util_avg;
 }
 
 /*
@@ -2387,8 +2354,15 @@ static inline void cpufreq_update_util(struct rq *rq, unsigned int flags)
 	if (data)
 		data->func(data, clock, flags);
 }
+
+static inline void cpufreq_update_this_cpu(struct rq *rq, unsigned int flags)
+{
+	if (cpu_of(rq) == smp_processor_id())
+		cpufreq_update_util(rq, flags);
+}
 #else
 static inline void cpufreq_update_util(struct rq *rq, unsigned int flags) {}
+static inline void cpufreq_update_this_cpu(struct rq *rq, unsigned int flags) {}
 #endif /* CONFIG_CPU_FREQ */
 
 #ifdef arch_scale_freq_capacity
@@ -2728,7 +2702,7 @@ static inline enum sched_boost_policy task_boost_policy(struct task_struct *p)
 		 */
 		if (sysctl_sched_boost == CONSERVATIVE_BOOST &&
 				task_util(p) <=
-				sysctl_sched_min_task_util_for_boost)
+				sysctl_sched_min_task_util_for_boost_colocation)
 			boost_on_big = SCHED_BOOST_NONE;
 	}
 
@@ -2783,6 +2757,22 @@ static inline bool is_min_capacity_cpu(int cpu)
 #endif
 }
 
+static inline int
+preferred_cluster(struct sched_cluster *cluster, struct task_struct *p)
+{
+	return 1;
+}
+
+static inline struct sched_cluster *rq_cluster(struct rq *rq)
+{
+	return NULL;
+}
+
+static inline u64 scale_load_to_cpu(u64 load, int cpu)
+{
+	return load;
+}
+
 static inline int cpu_capacity(int cpu)
 {
 	return SCHED_CAPACITY_SCALE;
@@ -2811,6 +2801,11 @@ static inline int update_preferred_cluster(struct related_thread_group *grp,
 }
 
 static inline void add_new_task_to_grp(struct task_struct *new) {}
+
+static inline int same_freq_domain(int src_cpu, int dst_cpu)
+{
+	return 1;
+}
 
 static inline int alloc_related_thread_groups(void) { return 0; }
 
@@ -2847,6 +2842,11 @@ static inline void clear_ed_task(struct task_struct *p, struct rq *rq) { }
 static inline bool early_detection_notify(struct rq *rq, u64 wallclock)
 {
 	return 0;
+}
+
+static inline unsigned int power_cost(int cpu, bool max)
+{
+	return SCHED_CAPACITY_SCALE;
 }
 
 static inline void walt_sched_energy_populated_callback(void) { }
